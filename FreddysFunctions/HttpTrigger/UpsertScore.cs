@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus;
+using FreddysFunctions.Model;
 using FreddysFunctions.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,10 +27,13 @@ namespace FreddysFunctions.HttpTrigger
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
-            string country = req.Query["Country"].ToString();
-            string score = req.Query["Score"].ToString();
 
-            if (string.IsNullOrEmpty(country) || string.IsNullOrEmpty(score) || !int.TryParse(score, out int parsedScore))
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            UpsertScoreModel data = JsonConvert.DeserializeObject<UpsertScoreModel>(requestBody);
+            string country = data.Country;
+            int score = data.Score;
+
+            if (string.IsNullOrEmpty(country) || score == null || score == 0)
             {
                 return new BadRequestObjectResult("Invalid input");
             }
@@ -37,7 +41,7 @@ namespace FreddysFunctions.HttpTrigger
             // Send message to Service Bus with random SessionId
             Random random = new Random();
             string sessionId = random.Next(0, 99999999).ToString();
-            string message = JsonConvert.SerializeObject(new { Country = country, Score = parsedScore });
+            string message = JsonConvert.SerializeObject(new { Country = country, Score = score });
             await SendMessageToServiceBusAsync(_serviceBusConnectionString, _queueName, message, sessionId);
 
             return new OkObjectResult("Success");

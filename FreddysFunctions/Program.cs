@@ -21,13 +21,15 @@ builder.ConfigureFunctionsWebApplication();
 builder.Services.AddScoped<SqlConnectionFactory>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ILeaderboardProvider, SqlLeaderboad>();
+
 // Allow CORS from localhost:4200
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost4200",
         builder => builder.WithOrigins("http://localhost:4200")
                           .AllowAnyMethod()
-                          .AllowAnyHeader());
+                          .AllowAnyHeader()
+                          .AllowCredentials());
 });
 
 builder.Build().Run();
